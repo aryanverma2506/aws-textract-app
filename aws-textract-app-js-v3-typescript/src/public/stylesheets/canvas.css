@@ -1,0 +1,79 @@
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Roboto", sans-serif;
+}
+
+body {
+  padding: 50px;
+}
+
+body h1,
+body p {
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.playground * {
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE 10+ */
+  user-select: none; /* Standard syntax */
+}
+
+.playground {
+  display: flex;
+  align-items: center;
+}
+
+.canvas {
+  overflow-x: auto;
+  margin: auto;
+  min-width: 200px;
+}
+
+.canvas.eraser {
+  cursor: url("/images/eraser.png") 7 100, auto;
+}
+
+.canvas.pencil {
+  cursor: url("/images/pencil.png") 0 100, auto;
+}
+
+.sidebar {
+  display: flex;
+  padding: 0 20px 0 0;
+  flex-direction: column;
+  gap: 10px;
+  width: 250px;
+  min-width: 150px;
+}
+
+.btn {
+  display: flex;
+  width: 100%;
+  padding: 10px;
+  position: relative;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.color-picker {
+  background: transparent;
+  height: 40px;
+}
+
+.output {
+  display: flex;
+  min-width: 360px;
+  margin-top: 20px;
+  flex-direction: column;
+  justify-content: space-between;
+}

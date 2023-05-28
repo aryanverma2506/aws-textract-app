@@ -1,0 +1,35 @@
+{
+  "name": "textract-upload",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node ./dist/bin/www",
+    "nodemon": "nodemon ./dist/bin/www",
+    "src-map": "nodemon --watch ./dist/** --ext map --exec ts-node --esm src-map-script.dev.ts",
+    "copy-assets": "nodemon --watch ./src/public/** --ext ts,png,jpg,jpeg,svg,json,js,css --exec ts-node --esm copy-static-assets.dev.ts",
+    "tsc-watch": "tsc --watch",
+    "dev": "concurrently \"npm run nodemon\" \"npm run tsc-watch\" \"npm run src-map\" \"npm run copy-assets\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.335.0",
+    "@aws-sdk/client-textract": "^3.335.0",
+    "debug": "^4.3.4",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "formidable": "^2.1.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.7",
+    "@types/express": "^4.17.17",
+    "@types/formidable": "^2.0.6",
+    "@types/morgan": "^1.9.4",
+    "@types/node": "^20.2.1",
+    "@types/shelljs": "^0.8.12",
+    "concurrently": "^8.0.1",
+    "nodemon": "^2.0.22",
+    "shelljs": "^0.8.5"
+  }
+}

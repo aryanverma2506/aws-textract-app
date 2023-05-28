@@ -1,0 +1,69 @@
+<%- include("./includes/head.ejs") %>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="/stylesheets/canvas.css">
+</head>
+
+<body>
+  <h1><%= title %></h1>
+  <p>Welcome to <%= title %></p>
+  <div class="playground">
+    <form id="canvas-form" class="sidebar">
+      <div className="option-section">
+        <h4>Tools</h4>
+        <button id="pencil" type="button" class="btn btn-default"><i class="glyphicon glyphicon-pencil" aria-hidden="true"></i></button>
+        <button id="eraser" type="button" class="btn btn-default"><i class="glyphicon glyphicon-erase" aria-hidden="true"></i></button>
+        <button id="clear-canvas" type="button" class="btn btn-danger"> <i class="glyphicon glyphicon-repeat" aria-hidden="true"></i></button>
+      </div>
+
+      <div className="option-section">
+        <h4>Colors & Size</h4>
+        <label for="color-picker">Color</label>
+        <input id="color-picker" type="color" class=" form-control color-picker" value="#c81464">
+        <label for="bg-color-picker">Bg Color</label>
+        <input id="bg-color-picker" type="color" class="form-control color-picker" value="#ffffff">
+        <label for="control-pencil-size">Pencil Size (<label id="pencil-size"></label>)</label>
+        <input id="control-pencil-size" type="range" min="1" max="50" value="5" step="1">
+        <label for="control-eraser-size">Eraser Size (<label id="eraser-size"></label>)</label>
+        <input id="control-eraser-size" type="range" min="1" max="50" value="20" step="1">
+      </div>
+
+      <div className="option-section">
+        <h4>Canvas</h4>
+        <label for="sizeX">Width</label>
+        <input id="sizeX" type="number" class="form-control size" placeholder="sizeX" class="form-control size" value="1100">
+        <label for="sizeY">Height</label>
+        <input id="sizeY" type="number" class="form-control size" placeholder="sizeY" class="form-control size" value="1100">
+        <button id="canvas-update" type="button" class="btn btn-success">Update</button>
+      </div>
+
+      <div className="option-section">
+        <h4>Storage</h4>
+        <button id="save-canvas" type="button" class="btn btn-success">Save</button>
+        <button id="load-canvas" type="button" class="btn btn-success">Load</button>
+        <button id="clear-canvas-cache" type="button" class="btn btn-danger">Clear Cache</button>
+      </div>
+
+      <div class="option-section">
+        <h4>Extra</h4>
+        <button id="download-canvas" type="button" class="btn btn-warning">Download</button>
+        <input id="file-picker" type="file" style="max-width: 0; max-height: 0; opacity: 0; position: absolute;" name="fileUpload" class="btn btn-danger" accept=".png, .jpg, .jpeg" />
+        <button id="file-picker-btn" type="button" name="fileUpload" class="btn btn-warning">Choose an image</button>
+        <button id="save-canvas" type="submit" class="btn btn-success">Submit and Extract</button>
+      </div>
+    </form>
+    <canvas id="canvas" class="canvas pencil"></canvas>
+  </div>
+
+  <div class="output">
+    <h4>Result</h4>
+    <input id="result" type="text" value="<%= data %>" disabled class="form-control" />
+    <button id="clear-result" type="button" class="btn btn-warning">Clear Result</button>
+  </div>
+
+</body>
+
+<script src="/javascripts/canvas.js"></script>
+<%- include("./includes/end.ejs") %>
