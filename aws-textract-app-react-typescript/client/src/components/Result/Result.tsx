@@ -16,8 +16,8 @@ const Result: React.FC<ResultProps> = (props) => {
         id="result"
         type="text"
         value={props.result}
-        disabled
         className="form-control"
+        onChange={() => {}}
       />
       <Button
         id="clear-result"

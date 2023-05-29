@@ -2,6 +2,7 @@ import { useCallback, useReducer } from "react";
 
 let isDrawing: boolean;
 let useTool: "PEN" | "ERASER" = "PEN";
+let longTouchTimeout: NodeJS.Timer;
 
 export enum canvasActions {
   createCanvas,
@@ -139,22 +140,20 @@ function canvasReducer(
       }
       callback &&
         callback(
-          (payload &&
-            Array.isArray(payload.drawing) && [
-              ...payload.drawing,
-              ...state.drawingArray,
-            ]) ||
-            state.drawingArray
+          payload && Array.isArray(payload.drawing)
+            ? payload.drawing.length > 0
+              ? [...payload.drawing, ...state.drawingArray]
+              : []
+            : state.drawingArray
         );
       return {
         ...state,
         drawingArray:
-          (payload &&
-            Array.isArray(payload.drawing) && [
-              ...payload.drawing,
-              ...state.drawingArray,
-            ]) ||
-          state.drawingArray,
+          payload && Array.isArray(payload.drawing)
+            ? payload.drawing.length > 0
+              ? [...payload.drawing, ...state.drawingArray]
+              : []
+            : state.drawingArray,
       };
     case canvasActions.drawOnCanvas:
       return {
@@ -238,25 +237,46 @@ export function useCanvas() {
     [canvas]
   );
 
-  const refreshCanvas = useCallback(() => {
-    if (canvas && ctx) {
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      canvas.style.border = "1px solid";
-      ctx.lineCap = "round";
-      ctx.fillStyle = canvasBgColor;
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-      redraw(drawingArray);
-    }
-  }, [
-    canvas,
-    ctx,
-    canvasWidth,
-    canvasHeight,
-    canvasBgColor,
-    drawingArray,
-    redraw,
-  ]);
+  const canvasTouchPos = useCallback(
+    <T extends React.TouchEvent<HTMLCanvasElement>>(event: T) => {
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = +canvas.width / +rect.width;
+        const scaleY = +canvas.height / +rect.height;
+        const offsetX = +event.touches[0].clientX - +rect.left;
+        const offsetY = +event.touches[0].clientY - +rect.top;
+        return { x: offsetX * scaleX, y: offsetY * scaleY };
+      }
+    },
+    [canvas]
+  );
+
+  const refreshCanvas = useCallback(
+    (withImage?: boolean) => {
+      if (canvas && ctx) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        canvas.style.border = "1px solid";
+        ctx.lineCap = "round";
+        ctx.fillStyle = canvasBgColor;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        if (withImage) {
+          ctx.putImageData(imageData, 0, 0);
+        }
+        redraw(drawingArray);
+      }
+    },
+    [
+      canvas,
+      ctx,
+      canvasWidth,
+      canvasHeight,
+      canvasBgColor,
+      drawingArray,
+      redraw,
+    ]
+  );
 
   const initializeCanvas = useCallback(
     ({
@@ -344,16 +364,16 @@ export function useCanvas() {
         const image = new Image();
         image.onload = () => {
           refreshCanvas();
-          ctx?.drawImage(image, 0, 0);
+          ctx?.drawImage(image, 0, 0, canvasWidth, canvasHeight);
         };
         e.target?.result && (image.src = e.target.result.toString());
       };
       file && fileReader.readAsDataURL(file);
     },
-    [ctx, refreshCanvas]
+    [ctx, canvasWidth, canvasHeight, refreshCanvas]
   );
 
-  const canvasDrawingHandler = useCallback(
+  const canvasMouseDrawingHandler = useCallback(
     ({
       type,
       event,
@@ -361,6 +381,7 @@ export function useCanvas() {
       type: "START" | "CONTINUE" | "STOP";
       event: React.MouseEvent<HTMLCanvasElement, MouseEvent>;
     }) => {
+      event.preventDefault();
       let currentPosition;
       switch (type) {
         case "START":
@@ -431,6 +452,119 @@ export function useCanvas() {
     ]
   );
 
+  const canvasTouchDrawingHandler = useCallback(
+    ({
+      type,
+      event,
+    }: {
+      type: "START" | "CONTINUE" | "STOP";
+      event: React.TouchEvent<HTMLCanvasElement>;
+    }) => {
+      let currentPosition:
+        | {
+            x: number;
+            y: number;
+          }
+        | undefined;
+      switch (type) {
+        case "START":
+          if (event.touches[0]) {
+            longTouchTimeout && clearTimeout(longTouchTimeout);
+            longTouchTimeout = setTimeout(() => {
+              document.body.style.overflow = "hidden";
+              isDrawing = true;
+              currentPosition =
+                canvasTouchPos<React.TouchEvent<HTMLCanvasElement>>(event);
+              if (isDrawing && currentPosition && ctx) {
+                ctx.beginPath();
+                ctx.moveTo(currentPosition.x, currentPosition.y);
+                ctx.lineWidth = useTool === "ERASER" ? eraserSize : penSize;
+                ctx.lineCap = "round";
+                ctx.strokeStyle =
+                  useTool === "ERASER" ? canvasBgColor : penColor;
+                ctx.lineTo(currentPosition.x, currentPosition.y);
+                ctx.stroke();
+                canvasStateHandler({
+                  type: canvasActions.drawOnCanvas,
+                  payloadKey: "drawing",
+                  value: {
+                    x: currentPosition.x,
+                    y: currentPosition.y,
+                    size: useTool === "ERASER" ? eraserSize : penSize,
+                    color: useTool === "ERASER" ? canvasBgColor : penColor,
+                    canMove: false,
+                  },
+                });
+              }
+            }, 300);
+
+            currentPosition =
+              canvasTouchPos<React.TouchEvent<HTMLCanvasElement>>(event);
+            if (isDrawing && currentPosition && ctx) {
+              longTouchTimeout && clearTimeout(longTouchTimeout);
+              ctx.beginPath();
+              ctx.moveTo(currentPosition.x, currentPosition.y);
+              ctx.lineWidth = useTool === "ERASER" ? eraserSize : penSize;
+              ctx.lineCap = "round";
+              ctx.strokeStyle = useTool === "ERASER" ? canvasBgColor : penColor;
+              ctx.lineTo(currentPosition.x, currentPosition.y);
+              ctx.stroke();
+              canvasStateHandler({
+                type: canvasActions.drawOnCanvas,
+                payloadKey: "drawing",
+                value: {
+                  x: currentPosition.x,
+                  y: currentPosition.y,
+                  size: useTool === "ERASER" ? eraserSize : penSize,
+                  color: useTool === "ERASER" ? canvasBgColor : penColor,
+                  canMove: false,
+                },
+              });
+            }
+          }
+          break;
+        case "CONTINUE":
+          longTouchTimeout && clearTimeout(longTouchTimeout);
+          currentPosition =
+            canvasTouchPos<React.TouchEvent<HTMLCanvasElement>>(event);
+          if (isDrawing && currentPosition && ctx) {
+            ctx.lineTo(currentPosition.x, currentPosition.y);
+            ctx.stroke();
+            canvasStateHandler({
+              type: canvasActions.drawOnCanvas,
+              payloadKey: "drawing",
+              value: {
+                x: currentPosition.x,
+                y: currentPosition.y,
+                size: useTool === "ERASER" ? eraserSize : penSize,
+                color: useTool === "ERASER" ? canvasBgColor : penColor,
+                canMove: true,
+              },
+            });
+          }
+          break;
+        case "STOP":
+          longTouchTimeout && clearTimeout(longTouchTimeout);
+          longTouchTimeout = setTimeout(() => {
+            document.body.style.overflow = "";
+            isDrawing = false;
+          }, 700);
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      ctx,
+      penSize,
+      penColor,
+      eraserSize,
+      canvasBgColor,
+      canvasTouchPos,
+      canvasStateHandler,
+    ]
+  );
+
   function isCanvasEmpty() {
     if (canvas && ctx) {
       const pixelData = ctx.getImageData(
@@ -483,7 +617,8 @@ export function useCanvas() {
     canvasStorageHandler,
     downloadCanvasHandler,
     loadImage,
-    canvasDrawingHandler,
+    canvasMouseDrawingHandler,
+    canvasTouchDrawingHandler,
     isCanvasEmpty,
   };
 }

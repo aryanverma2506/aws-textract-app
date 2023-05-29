@@ -20,7 +20,7 @@ export interface CanvasContextType {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
   }) => void;
-  refreshCanvas: () => void;
+  refreshCanvas: (withImage?: boolean) => void;
   canvasStateHandler: (action: {
     type: canvasActions;
     payloadKey?: keyof CanvasReducerActionPayloadTypes;
@@ -30,12 +30,19 @@ export interface CanvasContextType {
   canvasStorageHandler: (actionType: "SAVE" | "LOAD" | "CLEAR") => void;
   downloadCanvasHandler: () => void;
   loadImage: (file: File) => void;
-  canvasDrawingHandler: ({
+  canvasMouseDrawingHandler: ({
     type,
     event,
   }: {
     type: "START" | "CONTINUE" | "STOP";
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+  }) => void;
+  canvasTouchDrawingHandler: ({
+    type,
+    event,
+  }: {
+    type: "START" | "CONTINUE" | "STOP";
+    event: React.TouchEvent<HTMLCanvasElement>;
   }) => void;
   isCanvasEmpty: () => boolean;
 }
@@ -58,7 +65,7 @@ export const CanvasContext = createContext<CanvasContextType>({
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
   }) => {},
-  refreshCanvas: () => {},
+  refreshCanvas: (withImage = false) => {},
   canvasStateHandler: (action: {
     type: canvasActions;
     payloadKey?: keyof CanvasReducerActionPayloadTypes;
@@ -68,12 +75,19 @@ export const CanvasContext = createContext<CanvasContextType>({
   canvasStorageHandler: (actionType: "SAVE" | "LOAD" | "CLEAR") => {},
   downloadCanvasHandler: () => {},
   loadImage: (file: File) => {},
-  canvasDrawingHandler: ({
+  canvasMouseDrawingHandler: ({
     type,
     event,
   }: {
     type: "START" | "CONTINUE" | "STOP";
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+  }) => {},
+  canvasTouchDrawingHandler: ({
+    type,
+    event,
+  }: {
+    type: "START" | "CONTINUE" | "STOP";
+    event: React.TouchEvent<HTMLCanvasElement>;
   }) => {},
   isCanvasEmpty: () => true || false,
 });

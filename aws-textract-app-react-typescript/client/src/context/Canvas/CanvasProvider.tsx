@@ -23,7 +23,8 @@ const CanvasProvider: React.FC<CanvasProviderProps> = (props) => {
     canvasStorageHandler,
     downloadCanvasHandler,
     loadImage,
-    canvasDrawingHandler,
+    canvasMouseDrawingHandler,
+    canvasTouchDrawingHandler,
     isCanvasEmpty,
   } = useCanvas();
 
@@ -46,7 +47,8 @@ const CanvasProvider: React.FC<CanvasProviderProps> = (props) => {
         canvasStorageHandler,
         downloadCanvasHandler,
         loadImage,
-        canvasDrawingHandler,
+        canvasMouseDrawingHandler,
+        canvasTouchDrawingHandler,
         isCanvasEmpty,
       }}
     >

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 
 import {
   CanvasContext,
@@ -34,8 +34,11 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
     loadImage,
     isCanvasEmpty,
   } = canvasCtx;
+  const [imagePickerLabel, setImagePickerLabel] =
+    useState<string>("Choose an image");
 
   function pickImageHandler(file: File) {
+    setImagePickerLabel(() => file.name);
     loadImage(file);
   }
 
@@ -51,7 +54,8 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
             method: "POST",
             body: formData,
           });
-          props.callback && props.callback(responseData.data);
+          props.callback && props.callback(responseData.data.trim());
+          setImagePickerLabel(() => "Choose an image");
           refreshCanvas();
           canvasStateHandler({
             type: canvasActions.loadCanvas,
@@ -73,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
     <>
       <ErrorModal error={error} onClear={clearError}></ErrorModal>
       {isLoading && <LoadingSpinner asOverlay />}
-      <form id="canvas-form" className="sidebar" onSubmit={canvasSubmitHandler}>
+      <div className="sidebar">
         <div className="option-section">
           <h4>Tools</h4>
           <Button
@@ -188,47 +192,49 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
 
         <div className="option-section">
           <h4>Canvas</h4>
-          <Input
-            id="width"
-            type="number"
-            label="Width"
-            placeholder="Canvas Width"
-            className="form-control size"
-            value={canvasWidth}
-            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-              canvasStateHandler({
-                type: canvasActions.changeCanvasWidth,
-                payloadKey: "canvasWidth",
-                value: e.target.value,
-              })
-            }
-          />
-          <Input
-            id="height"
-            type="number"
-            label="Height"
-            placeholder="Canvas Height"
-            className="form-control size"
-            value={canvasHeight}
-            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-              canvasStateHandler({
-                type: canvasActions.changeCanvasHeight,
-                payloadKey: "canvasHeight",
-                value: e.target.value,
-              })
-            }
-          />
-          <Button
-            id="canvas-update"
-            type="button"
-            label="Update"
-            className="btn btn-success"
-            onClick={() => {
-              refreshCanvas();
-            }}
-          >
-            <i className="glyphicon glyphicon-refresh" aria-hidden="true"></i>
-          </Button>
+          <form onSubmit={(e) => e.preventDefault()}>
+            <Input
+              id="width"
+              type="number"
+              label="Width"
+              placeholder="Canvas Width"
+              className="form-control size"
+              value={canvasWidth}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                canvasStateHandler({
+                  type: canvasActions.changeCanvasWidth,
+                  payloadKey: "canvasWidth",
+                  value: e.target.value,
+                })
+              }
+            />
+            <Input
+              id="height"
+              type="number"
+              label="Height"
+              placeholder="Canvas Height"
+              className="form-control size"
+              value={canvasHeight}
+              onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                canvasStateHandler({
+                  type: canvasActions.changeCanvasHeight,
+                  payloadKey: "canvasHeight",
+                  value: e.target.value,
+                })
+              }
+            />
+            <Button
+              id="canvas-update"
+              type="submit"
+              label="Update"
+              className="btn btn-success"
+              onClick={() => {
+                refreshCanvas(true);
+              }}
+            >
+              <i className="glyphicon glyphicon-refresh" aria-hidden="true"></i>
+            </Button>
+          </form>
         </div>
 
         <div className="option-section">
@@ -264,46 +270,48 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
             <i className="glyphicon glyphicon-trash" aria-hidden="true"></i>
           </Button>
         </div>
-
         <div className="option-section">
-          <h4>Extra</h4>
-          <Button
-            id="download-canvas"
-            type="button"
-            label="Download"
-            className="btn btn-warning"
-            onClick={downloadCanvasHandler}
-          >
-            <i
-              className="glyphicon glyphicon-download-alt"
-              aria-hidden="true"
-            ></i>
-          </Button>
-          <Input
-            id="upload-canvas"
-            type="file"
-            style={{
-              maxWidth: 0,
-              maxHeight: 0,
-              opacity: 0,
-              position: "absolute",
-            }}
-            className="btn btn-danger"
-            accept=".png, .jpg, .jpeg"
-            callback={pickImageHandler}
-          >
-            <i className="glyphicon glyphicon-open" aria-hidden="true"></i>
-          </Input>
-          <Button
-            id="submit-canvas"
-            type="submit"
-            label="Submit and Extract"
-            className="btn btn-success"
-          >
-            <i className="glyphicon glyphicon-send" aria-hidden="true"></i>
-          </Button>
+          <form id="canvas-form" onSubmit={canvasSubmitHandler}>
+            <h4>Extra</h4>
+            <Button
+              id="download-canvas"
+              type="button"
+              label="Download"
+              className="btn btn-warning"
+              onClick={downloadCanvasHandler}
+            >
+              <i
+                className="glyphicon glyphicon-download-alt"
+                aria-hidden="true"
+              ></i>
+            </Button>
+            <Input
+              id="upload-canvas"
+              type="file"
+              label={imagePickerLabel}
+              style={{
+                maxWidth: 0,
+                maxHeight: 0,
+                opacity: 0,
+                position: "absolute",
+              }}
+              className="btn btn-danger"
+              accept=".png, .jpg, .jpeg"
+              callback={pickImageHandler}
+            >
+              <i className="glyphicon glyphicon-open" aria-hidden="true"></i>
+            </Input>
+            <Button
+              id="submit-canvas"
+              type="submit"
+              label="Submit and Extract"
+              className="btn btn-success"
+            >
+              <i className="glyphicon glyphicon-send" aria-hidden="true"></i>
+            </Button>
+          </form>
         </div>
-      </form>
+      </div>
     </>
   );
 };
