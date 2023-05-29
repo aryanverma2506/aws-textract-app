@@ -14,6 +14,7 @@ export enum canvasActions {
   changeEraserSize,
   changeCanvasWidth,
   changeCanvasHeight,
+  loadImage,
   loadCanvas,
   drawOnCanvas,
 }
@@ -42,6 +43,7 @@ export interface CanvasReducerStateTypes {
   penColor: string;
   eraserSize: number;
   canvasBgColor: string;
+  loadedImage?: HTMLImageElement | null;
 }
 
 export interface CanvasReducerActionPayloadTypes {
@@ -54,6 +56,7 @@ export interface CanvasReducerActionPayloadTypes {
   penColor?: string;
   eraserSize?: number;
   canvasBgColor?: string;
+  loadedImage?: HTMLImageElement;
 }
 
 export interface CanvasReducerActionTypes {
@@ -108,6 +111,14 @@ function canvasReducer(
       if (state.canvas && state.ctx) {
         state.ctx.fillStyle = payload?.canvasBgColor || state.canvasBgColor;
         state.ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+        state.loadedImage &&
+          state.ctx.drawImage(
+            state.loadedImage,
+            0,
+            0,
+            state.canvas.width,
+            state.canvas.height
+          );
       }
       callback && callback(state.drawingArray);
       return {
@@ -134,27 +145,32 @@ function canvasReducer(
         ...state,
         canvasHeight: payload?.canvasHeight || state.canvasHeight,
       };
-    case canvasActions.loadCanvas:
-      if (state.canvas && state.ctx) {
-        state.ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
-      }
-      callback &&
-        callback(
-          payload && Array.isArray(payload.drawing)
-            ? payload.drawing.length > 0
-              ? [...payload.drawing, ...state.drawingArray]
-              : []
-            : state.drawingArray
-        );
+    case canvasActions.loadImage:
       return {
         ...state,
-        drawingArray:
-          payload && Array.isArray(payload.drawing)
-            ? payload.drawing.length > 0
+        loadedImage: payload?.loadedImage || state.loadedImage,
+      };
+    case canvasActions.loadCanvas:
+      if (payload && Array.isArray(payload.drawing)) {
+        if (payload.drawing.length === 0 && state.canvas && state.ctx) {
+          state.ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+        }
+        callback &&
+          callback(
+            payload.drawing.length > 0
               ? [...payload.drawing, ...state.drawingArray]
               : []
-            : state.drawingArray,
-      };
+          );
+        return {
+          ...state,
+          drawingArray:
+            payload.drawing.length > 0
+              ? [...payload.drawing, ...state.drawingArray]
+              : [],
+          loadedImage: payload.drawing.length > 0 ? state.loadedImage : null,
+        };
+      }
+      return { ...state };
     case canvasActions.drawOnCanvas:
       return {
         ...state,
@@ -181,6 +197,7 @@ export function useCanvas() {
     penColor: "#c81464",
     eraserSize: 20,
     canvasBgColor: "#ffffff",
+    loadedImage: null,
   });
 
   const {
@@ -193,6 +210,7 @@ export function useCanvas() {
     penColor,
     eraserSize,
     canvasBgColor,
+    loadedImage,
   } = canvasState;
 
   const redraw = useCallback(
@@ -254,7 +272,6 @@ export function useCanvas() {
   const refreshCanvas = useCallback(
     (withImage?: boolean) => {
       if (canvas && ctx) {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
         canvas.style.border = "1px solid";
@@ -262,7 +279,8 @@ export function useCanvas() {
         ctx.fillStyle = canvasBgColor;
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         if (withImage) {
-          ctx.putImageData(imageData, 0, 0);
+          loadedImage &&
+            ctx.drawImage(loadedImage, 0, 0, canvasWidth, canvasHeight);
         }
         redraw(drawingArray);
       }
@@ -274,6 +292,7 @@ export function useCanvas() {
       canvasHeight,
       canvasBgColor,
       drawingArray,
+      loadedImage,
       redraw,
     ]
   );
@@ -326,7 +345,7 @@ export function useCanvas() {
             canvasStateHandler({
               type: canvasActions.loadCanvas,
               payloadKey: "drawing",
-              value: drawingArray,
+              value: drawingArray.length > 0 ? drawingArray : undefined,
               doRedraw: true,
             });
             console.log("Canvas LOADED!");
@@ -363,14 +382,19 @@ export function useCanvas() {
       fileReader.onload = (e) => {
         const image = new Image();
         image.onload = () => {
-          refreshCanvas();
           ctx?.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+          canvasStateHandler({
+            type: canvasActions.loadImage,
+            payloadKey: "loadedImage",
+            value: image,
+          });
+          redraw(drawingArray);
         };
         e.target?.result && (image.src = e.target.result.toString());
       };
       file && fileReader.readAsDataURL(file);
     },
-    [ctx, canvasWidth, canvasHeight, refreshCanvas]
+    [ctx, canvasWidth, canvasHeight, drawingArray, redraw, canvasStateHandler]
   );
 
   const canvasMouseDrawingHandler = useCallback(
